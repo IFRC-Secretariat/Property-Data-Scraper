@@ -1,0 +1,27 @@
+Kategoria: category
+Lokalizacja: address_locality
+Cena: price
+Cena za m2: price_zl_per_m2
+Powierzchnia całkowita: surface_area_m2
+Liczba pokoi: number_of_rooms
+Liczba pomieszczeń: number_of_rooms_2
+Dostępne od: available_from
+Czynsz: price_utilities_pln
+Typ budynku: building_type
+Forma własności: property_type
+Rok budowy: year_of_construction
+Materiał: material
+Piętro: floor
+Liczba pięter w budynku: number_of_floors_in_the_building
+Numer oferty: offer_number
+Kuchnia: kitchen_cooking
+Przeznaczenie: purpose
+Rodzaj domu: house_type
+Droga dojazdowa: access_road
+Media: utilities
+Powierzchnia działki: land_area
+Ogrodzenie działki: plot_fencing
+Kształt działki: plot_shape
+Kanalizacja: sewage
+Rodzaj działki: plot_type
+Powierzchnia piwnicy: basement
