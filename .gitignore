@@ -2,3 +2,4 @@
 *.xlsx
 test.txt
 testing.csv
+__pycache__
