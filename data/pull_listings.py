@@ -85,12 +85,16 @@ class PullPropertyListings:
         page_number = page_start
         while True:
             data = pd.DataFrame()
-            print(f'\nSearching listings in page {page_number}... {self.root_url}/{page_slug}?{self.page_param}={page_number}')
-            listings_page = requests.get(f'{self.root_url}/{page_slug}?{self.page_param}={page_number}')
+            listings_page_url = f'{self.root_url}/{page_slug}?{self.page_param}={page_number}'
+            print(f'\nSearching listings in page {page_number}... {listings_page_url}')
+            listings_page = requests.get(listings_page_url)
             listings_soup = BeautifulSoup(listings_page.content, "html.parser")
 
             # Get the listings and check if redirect or empty page
-            listings = self.get_listings_list(listings_soup)
+            try:
+                listings = self.get_listings_list(listings_soup)
+            except AttributeError as err:
+                break
             if not listings:
                 break
             if listings_page.history:
@@ -98,8 +102,14 @@ class PullPropertyListings:
                     break
 
             # Loop through all listings on the page
-            for single_listing in listings:
-                single_listing_url = self.get_listing_url(single_listing)
+            for i, single_listing in enumerate(listings):
+
+                # Get the single listing URL and request the single listing page
+                try:
+                    single_listing_url = self.get_listing_url(single_listing)
+                except TypeError as err:
+                    print(f'Error with finding the URL for listing {i} on page {listings_page_url}:\n{single_listing}')
+                    raise TypeError(err)
                 if not single_listing_url:
                     continue
                 single_listing_url = f'{self.root_url}{single_listing_url}'
@@ -111,8 +121,11 @@ class PullPropertyListings:
                     single_listing_info = self.get_listing_details(listing_page_soup=single_soup,
                                                                    listing_details_translations=listing_details_translations)
                 except Exception as err:
-                    print(f'Error with listing {single_listing_url}')
-                    raise RuntimeError(err)
+                    print(f'Skipping listing due to error: {single_listing_url}')
+                    f = open("log.txt", "a")
+                    f.write(f'Skipping listing due to error: {single_listing_url}\n')
+                    f.close()
+                    #raise RuntimeError(err)
                 single_listing_info['url'] = single_listing_url
 
                 # Append the data to the dataframe
@@ -130,6 +143,7 @@ class PullPropertyListings:
             header = (not os.path.exists(data_write_path)) if mode=='a' else True
             data.to_csv(data_write_path, index=False, header=header, mode=mode)
 
-            if page_number >= page_end:
-                break
+            if page_end is not None:
+                if page_number >= page_end:
+                    break
             page_number += 1
