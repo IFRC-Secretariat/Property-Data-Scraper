@@ -4,11 +4,14 @@ Script to pull rental listings for the Polish estate agent website, Domiporta (h
 Note that data will be appended to the file in the data folder, so this file should be deleted if you want to create a new file.
 """
 import os
+import traceback
+from urllib.parse import urlparse
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 import yaml
 from collections import Counter
+
 
 class PullPropertyListings:
     """
@@ -87,7 +90,10 @@ class PullPropertyListings:
             data = pd.DataFrame()
             listings_page_url = f'{self.root_url}/{page_slug}?{self.page_param}={page_number}'
             print(f'\nSearching listings in page {page_number}... {listings_page_url}')
-            listings_page = requests.get(listings_page_url)
+            try:
+                listings_page = requests.get(listings_page_url)
+            except requests.exceptions.ChunkedEncodingError as err:
+                break
             listings_soup = BeautifulSoup(listings_page.content, "html.parser")
 
             # Get the listings and check if redirect or empty page
@@ -107,29 +113,35 @@ class PullPropertyListings:
                 # Get the single listing URL and request the single listing page
                 try:
                     single_listing_url = self.get_listing_url(single_listing)
+                    single_listing_url = self.convert_relative_url(single_listing_url)
                 except TypeError as err:
-                    print(f'Error with finding the URL for listing {i} on page {listings_page_url}:\n{single_listing}')
+                    print(f'Error with finding the URL for listing {i} on page {listings_page_url}')
                     raise TypeError(err)
+                except ValueError as err:
+                    continue
                 if not single_listing_url:
                     continue
-                single_listing_url = f'{self.root_url}{single_listing_url}'
                 single_page = requests.get(f'{single_listing_url}')
                 single_soup = BeautifulSoup(single_page.content, "html.parser")
 
                 # Extract individual listing information
+                print(single_listing_url)
                 try:
                     single_listing_info = self.get_listing_details(listing_page_soup=single_soup,
                                                                    listing_details_translations=listing_details_translations)
+                    single_listing_info['url'] = single_listing_url
                 except Exception as err:
-                    print(f'Skipping listing due to error: {single_listing_url}')
+                    error_message = f'\nSkipping listing due to error: {single_listing_url}\n{str(err)}'
                     f = open("log.txt", "a")
-                    f.write(f'Skipping listing due to error: {single_listing_url}\n')
+                    f.write(error_message)
                     f.close()
-                    #raise RuntimeError(err)
-                single_listing_info['url'] = single_listing_url
+                    print(err)
+                    print(traceback.format_exc())
+                    continue
 
                 # Append the data to the dataframe
                 data = data.append(single_listing_info, ignore_index=True)
+
 
             # Process athe data
             data = self.process_listing_data(listings_data=data,
@@ -147,3 +159,19 @@ class PullPropertyListings:
                 if page_number >= page_end:
                     break
             page_number += 1
+
+
+    def convert_relative_url(self, url):
+        """
+        Convert a relative URL to an absolute URL.
+        If the URL is an absolute URL of another site, raise an error.
+        """
+        # Check if the URL is relative or absolute
+        url_hostname = urlparse(url).hostname
+        if url_hostname is None:
+            return f'{self.root_url}{url}'
+        else:
+            if url_hostname==urlparse(self.root_url).hostname:
+                return url
+            else:
+                raise ValueError(f'URL does not match site URL: {url}')
