@@ -9,11 +9,14 @@ class PullDomiportaListings(PullPropertyListings):
     Pull property listings from the Polish real estate listing site, Domiporta.
     """
     def __init__(self):
-        """
-        """
         root_url = 'https://www.domiporta.pl'
         page_param = 'PageNumber'
-        super().__init__(root_url, page_param)
+        listing_categories = {'mieszkanie/wynajme': 'apartments', 'dom/wynajme': 'houses', 'pokoj/wynajme': 'rooms'}
+        listing_details_translations=yaml.safe_load(open('listing_details_translations.yml'))
+        super().__init__(root_url=root_url,
+                         page_param=page_param,
+                         listing_categories=listing_categories,
+                         listing_details_translations=listing_details_translations)
 
 
     def get_listings_list(self, listings_page_soup):
@@ -58,7 +61,7 @@ class PullDomiportaListings(PullPropertyListings):
         return url
 
 
-    def get_listing_details(self, listing_page_soup, listing_details_translations=None):
+    def get_listing_details(self, listing_page_soup):
         """
         Get details of the property listing from the listing soup.
 
@@ -66,9 +69,6 @@ class PullDomiportaListings(PullPropertyListings):
         ----------
         listing_page_soup : BeautifulSoup (required)
             Soup of the listing page.
-
-        listing_details_translations : dict (default=None)
-            Dictionary mapping listing detail names to a translation.
 
         Returns
         -------
@@ -97,12 +97,12 @@ class PullDomiportaListings(PullPropertyListings):
             detail_value = item.find("span", {"class": "features__item_value"})
 
             # Check if the information is known
-            if detail_title not in listing_details_translations:
+            if detail_title not in self.listing_details_translations:
                 print(f'Unrecognised listing detail: {detail_title.strip()}')
                 continue
 
             # Extract the information depending on which item
-            detail_title_trans = listing_details_translations[detail_title]
+            detail_title_trans = self.listing_details_translations[detail_title]
             if detail_title=='Lokalizacja':
                 address_details = detail_value.find("span", {"itemprop": "address"})
                 listing_details["address_locality"] = address_details.find("span", {"itemprop": "addressLocality"}).text.strip()
@@ -130,7 +130,7 @@ class PullDomiportaListings(PullPropertyListings):
         return listing_details
 
 
-    def process_listing_data(self, listings_data, listing_details_names):
+    def process_listing_data(self, listings_data):
         """
         Process the dataset of listings.
 
@@ -154,7 +154,7 @@ class PullDomiportaListings(PullPropertyListings):
 
         # Order the columns so that the appending to the data is consistent
         columns_order = ['title', 'listing_page_category', 'price', 'price_num', 'currency', 'price_zl_per_m2', 'price_zl_per_m2_num', 'surface_area_m2', 'surface_area_m2_num', 'address_locality', 'street_address', 'region', 'country', 'postcode', 'latitude', 'longitude']
-        columns_order += [item for item in listing_details_names if item not in columns_order] + ['url']
+        columns_order += [item for item in self.listing_details_translations.values() if item not in columns_order] + ['url']
         for column in columns_order:
             if column not in listings_data.columns:
                 listings_data[column] = ''
@@ -167,9 +167,7 @@ class PullDomiportaListings(PullPropertyListings):
 
 
 if __name__ == "__main__":
-    listing_categories = {'mieszkanie/wynajme': 'apartments', 'dom/wynajme': 'houses', 'pokoj/wynajme': 'rooms'}
     listings_puller = PullDomiportaListings()
     listings_puller.pull_listing_categories(data_write_path='raw/testing.csv',
-                                            listing_categories=listing_categories,
-                                            listing_details_translations=yaml.safe_load(open('listing_details_translations.yml')),
+                                            categories=['apartments', 'houses', 'rooms'],
                                             page_end=5)

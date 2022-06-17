@@ -12,7 +12,12 @@ class PullOtodomListings(PullPropertyListings):
     def __init__(self):
         root_url = 'https://www.otodom.pl'
         page_param = 'page'
-        super().__init__(root_url, page_param)
+        listing_categories = {'apartments': 'pl/oferty/wynajem/mieszkanie/cala-polska', 'houses': 'pl/oferty/wynajem/dom/cala-polska'}
+        listing_details_translations = yaml.safe_load(open('listing_details_translations.yml'))
+        super().__init__(root_url=root_url,
+                         page_param=page_param,
+                         listing_categories=listing_categories,
+                         listing_details_translations=listing_details_translations)
 
 
     def get_listings_list(self, listings_page_soup):
@@ -56,7 +61,7 @@ class PullOtodomListings(PullPropertyListings):
             return listing_link['href']
 
 
-    def get_listing_details(self, listing_page_soup, listing_details_translations=None):
+    def get_listing_details(self, listing_page_soup):
         """
         Get details of the property listing from the listing soup.
 
@@ -64,9 +69,6 @@ class PullOtodomListings(PullPropertyListings):
         ----------
         listing_page_soup : BeautifulSoup (required)
             Soup of the listing page.
-
-        listing_details_translations : dict (default=None)
-            Dictionary mapping listing detail names to a translation.
 
         Returns
         -------
@@ -89,11 +91,11 @@ class PullOtodomListings(PullPropertyListings):
             except AttributeError:
                 detail_value = None
 
-            if detail_title not in listing_details_translations:
+            if detail_title not in self.listing_details_translations:
                 print(f'Unrecognised listing detail: {detail_title}')
                 continue
 
-            detail_title_trans = listing_details_translations[detail_title]
+            detail_title_trans = self.listing_details_translations[detail_title]
             listing_details[detail_title_trans] = detail_value
 
         # Get the latitude and longitude
@@ -105,27 +107,27 @@ class PullOtodomListings(PullPropertyListings):
         return listing_details
 
 
-    def process_listing_data(self, listings_data, listing_details_names):
+    def process_listing_data(self, data):
         """
         Process the dataset of listings.
 
         Parameters
         ----------
-        listings_data : Pandas DataFrame (required)
+        data : Pandas DataFrame (required)
             Pandas DataFrame with one row per listing.
         """
         # Process the data to convert numbers with units to just numbers
         def convert_units_to_num(price, unit=None):
             try:
-                price_num = float(price.strip().split(unit)[0].replace(',','.').replace(' ',''))
+                price_num = float(str(price).strip().split(unit)[0].replace(',','.').replace(' ',''))
                 return price_num
             except:
                 return
-        listings_data['price_num'] = listings_data['price'].apply(lambda x: convert_units_to_num(x, unit='zł'))
-        listings_data['surface_area_m2_num'] = listings_data['surface_area_m2'].apply(lambda x: convert_units_to_num(x, unit='m2'))
-        listings_data['latitude'] = listings_data['latitude'].apply(lambda x: convert_units_to_num(x))
-        listings_data['longitude'] = listings_data['longitude'].apply(lambda x: convert_units_to_num(x))
-        listings_data['price_utilities_pln_num'] = listings_data['price_utilities_pln'].apply(lambda x: convert_units_to_num(x, unit='zł/miesiąc'))
+        data['price_num'] = data['price'].apply(lambda x: convert_units_to_num(x, unit='zł'))
+        data['surface_area_m2_num'] = data['surface_area_m2'].apply(lambda x: convert_units_to_num(x, unit='m2'))
+        data['latitude'] = data['latitude'].apply(lambda x: convert_units_to_num(x))
+        data['longitude'] = data['longitude'].apply(lambda x: convert_units_to_num(x))
+        data['price_utilities_pln_num'] = data['price_utilities_pln'].apply(lambda x: convert_units_to_num(x, unit='zł/miesiąc'))
 
         # Calculate price per m2
         def divide_ignore_nan(first, second):
@@ -133,28 +135,26 @@ class PullOtodomListings(PullPropertyListings):
             if first is None or second is None: return
             if second==0: return
             return first/second
-        listings_data['price_zl_per_m2_num'] = listings_data.apply(lambda row: divide_ignore_nan(row['price_num'], row['surface_area_m2_num']), axis=1)
+        data['price_zl_per_m2_num'] = data.apply(lambda row: divide_ignore_nan(row['price_num'], row['surface_area_m2_num']), axis=1)
 
         # Order the columns so that the appending to the data is consistent
         columns_order = ['title', 'price', 'price_num', 'price_zl_per_m2_num', 'surface_area_m2_num', 'price_utilities_pln_num', 'latitude', 'longitude']
-        columns_order += [item for item in listing_details_names if item not in columns_order] + ['url']
-        if 'listing_page_category' in listings_data.columns:
+        columns_order += [item for item in self.listing_details_translations.values() if item not in columns_order] + ['url']
+        if 'listing_page_category' in data.columns:
             columns_order += ['listing_page_category']
         for column in columns_order:
-            if column not in listings_data.columns:
-                listings_data[column] = ''
-        missed_columns = [column for column in listings_data.columns if column not in columns_order]
+            if column not in data.columns:
+                data[column] = ''
+        missed_columns = [column for column in data.columns if column not in columns_order]
         if missed_columns:
             raise RuntimeError(f'Missing columns: {missed_columns}')
-        listings_data = listings_data[columns_order]
+        data = data[columns_order]
 
-        return listings_data
+        return data
 
 
 if __name__ == "__main__":
-    listing_categories = {'pl/oferty/wynajem/mieszkanie/cala-polska': 'apartments', 'pl/oferty/wynajem/dom/cala-polska': 'houses'}
     listings_puller = PullOtodomListings()
     listings_puller.pull_listing_categories(data_write_path='raw/2022-06-13_otodom_listings.csv',
-                                            listing_categories=listing_categories,
-                                            listing_details_translations=yaml.safe_load(open('listing_details_translations.yml')),
+                                            categories=['houses', 'apartments'],
                                             page_start=1)

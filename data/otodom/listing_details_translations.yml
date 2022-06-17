@@ -8,3 +8,5 @@ Kaucja: deposit
 Rodzaj zabudowy: building_type
 Balkon / ogród / taras: balcony
 Stan wykończenia: condition
+Miejsce parkingowe: parking
+Liczba pięter: number_of_floors

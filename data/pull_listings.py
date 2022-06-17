@@ -19,26 +19,51 @@ class PullPropertyListings:
 
     Parameters
     ----------
+    root_url : string (required)
+        The root url of the website.
+
+    page_param : string (required)
+        The name of the parameter that is in the URL to specify the page number.
+
+    listing_categories : dict (required)
+        Dictionary mapping category names to relative URLs for those categories.
+
+    listing_details_translations : dict (required)
+        Dictionary mapping listing detail names to a translation. The order of keys will also be used to order the columns of the final dataset.
     """
-    def __init__(self, root_url, page_param):
+    def __init__(self, root_url, page_param, listing_categories, listing_details_translations=None):
         self.root_url = root_url
         self.page_param = page_param
+        self.listing_categories = listing_categories
+        if listing_details_translations is None:
+            listing_details_translations = []
+        self.listing_details_translations = listing_details_translations
 
 
-    def pull_listing_categories(self, listing_categories, data_write_path, listing_details_translations, page_start=1, page_end=None):
+    def pull_listing_categories(self, categories, data_write_path, page_start=1, page_end=None):
         """
         Pull listings from multiple listing pages.
+
+        Parameters
+        ----------
+        categories : list
+            List of categories to pull, e.g. ['houses', 'apartments'].
         """
         # Print a warning if the file already exists
         if os.path.exists(data_write_path):
             input(f'WARNING: data will overwrite the existing data file at {data_write_path}. Press enter to continue.')
             os.remove(data_write_path)
 
+        # Get the categories
+        try:
+            listing_categories = {category: self.listing_categories[category] for category in categories}
+        except KeyError as err:
+            raise KeyError(f'Unrecognised listing category {err}')
+
         # Loop through categories, pull data for each category, and save
-        for category_url, category_name in listing_categories.items():
+        for category_name, category_url in listing_categories.items():
             self.pull_listings(data_write_path=data_write_path,
                                page_slug=category_url,
-                               listing_details_translations=listing_details_translations,
                                extra_listing_info={'listing_page_category': category_name},
                                page_start=page_start,
                                page_end=page_end,
@@ -46,7 +71,7 @@ class PullPropertyListings:
                                suppress_overwrite_warning=True)
 
 
-    def pull_listings(self, data_write_path, page_slug, listing_details_translations, extra_listing_info=None, page_start=1, page_end=None, mode='a', suppress_overwrite_warning=False):
+    def pull_listings(self, data_write_path, page_slug, extra_listing_info=None, page_start=1, page_end=None, mode='a', suppress_overwrite_warning=False):
         """
         Pull a dataset of listings from the property website and write to a file.
         By default results are appended to the file to enable stopping and starting.
@@ -68,9 +93,6 @@ class PullPropertyListings:
         page_end : int (default=None)
             Number of pages to pull. If None, all pages will be pulled.
 
-        listing_details_translations : dict (required)
-            Dictionary mapping listing detail names to a translation. The order of keys will also be used to order the columns of the final dataset.
-
         mode : string (default='a')
             Mode used to write the final dataset. Default is append.
         """
@@ -81,8 +103,6 @@ class PullPropertyListings:
                     input(f'WARNING: data will append to the existing data file at {data_write_path}. Press enter to continue.')
                 elif mode=='w':
                     input(f'WARNING: data will overwrite the existing data file at {data_write_path}. Press enter to continue.')
-        if listing_details_translations is None:
-            listing_details_translations = []
 
         # Loop through listing pages and pull data
         page_number = page_start
@@ -121,14 +141,13 @@ class PullPropertyListings:
                     continue
                 if not single_listing_url:
                     continue
+                print(single_listing_url)
                 single_page = requests.get(f'{single_listing_url}')
                 single_soup = BeautifulSoup(single_page.content, "html.parser")
 
                 # Extract individual listing information
-                print(single_listing_url)
                 try:
-                    single_listing_info = self.get_listing_details(listing_page_soup=single_soup,
-                                                                   listing_details_translations=listing_details_translations)
+                    single_listing_info = self.get_listing_details(listing_page_soup=single_soup)
                     single_listing_info['url'] = single_listing_url
                 except Exception as err:
                     error_message = f'\nSkipping listing due to error: {single_listing_url}\n{str(err)}'
@@ -142,10 +161,8 @@ class PullPropertyListings:
                 # Append the data to the dataframe
                 data = data.append(single_listing_info, ignore_index=True)
 
-
             # Process athe data
-            data = self.process_listing_data(listings_data=data,
-                                             listing_details_names=listing_details_translations.values())
+            data = self.process_listing_data(data=data)
             if extra_listing_info is not None:
                 for name, value in extra_listing_info.items():
                     data[name] = value
@@ -166,6 +183,9 @@ class PullPropertyListings:
         Convert a relative URL to an absolute URL.
         If the URL is an absolute URL of another site, raise an error.
         """
+        if not url:
+            return
+
         # Check if the URL is relative or absolute
         url_hostname = urlparse(url).hostname
         if url_hostname is None:

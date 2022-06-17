@@ -12,7 +12,12 @@ class PullOlxListings(PullPropertyListings):
     def __init__(self):
         root_url = 'https://www.olx.pl'
         page_param = 'page'
-        super().__init__(root_url, page_param)
+        listing_categories = {'d/nieruchomosci/stancje-pokoje/': 'rooms'}
+        listing_details_translations=yaml.safe_load(open('listing_details_translations.yml'))
+        super().__init__(root_url=root_url,
+                         page_param=page_param,
+                         listing_categories=listing_categories,
+                         listing_details_translations=listing_details_translations)
 
 
     def get_listings_list(self, listings_page_soup):
@@ -55,7 +60,7 @@ class PullOlxListings(PullPropertyListings):
             return listing_link['href']
 
 
-    def get_listing_details(self, listing_page_soup, listing_details_translations=None):
+    def get_listing_details(self, listing_page_soup):
         """
         Get details of the property listing from the listing soup.
 
@@ -63,9 +68,6 @@ class PullOlxListings(PullPropertyListings):
         ----------
         listing_page_soup : BeautifulSoup (required)
             Soup of the listing page.
-
-        listing_details_translations : dict (default=None)
-            Dictionary mapping listing detail names to a translation.
 
         Returns
         -------
@@ -92,10 +94,10 @@ class PullOlxListings(PullPropertyListings):
             for detail in details_section[1:]:
                 detail_text = detail.find("p").text.strip().split(':')
                 detail_title = detail_text[0]
-                if detail_title not in listing_details_translations:
+                if detail_title not in self.listing_details_translations:
                     print(f'Unrecognised listing detail: {detail_title}')
                     continue
-                detail_title_trans = listing_details_translations[detail_title]
+                detail_title_trans = self.listing_details_translations[detail_title]
                 listing_details[detail_title_trans] = detail_text[1]
 
         # Get the latitude and longitude from the script
@@ -109,7 +111,7 @@ class PullOlxListings(PullPropertyListings):
         return listing_details
 
 
-    def process_listing_data(self, listings_data, listing_details_names):
+    def process_listing_data(self, listings_data):
         """
         Process the dataset of listings.
 
@@ -131,7 +133,7 @@ class PullOlxListings(PullPropertyListings):
 
         # Order the columns so that the appending to the data is consistent
         columns_order = ['title', 'price', 'price_num', 'latitude', 'longitude', 'status']
-        columns_order += [item for item in listing_details_names if item not in columns_order]
+        columns_order += [item for item in self.listing_details_translations.values() if item not in columns_order]
         if 'listing_page_category' in listings_data.columns:
             columns_order += ['listing_page_category']
         columns_order += ['url']
@@ -147,9 +149,7 @@ class PullOlxListings(PullPropertyListings):
 
 
 if __name__ == "__main__":
-    listing_categories = {'d/nieruchomosci/stancje-pokoje/': 'rooms'}
     listings_puller = PullOlxListings()
     listings_puller.pull_listing_categories(data_write_path='raw/2022-06-14_olx_listings.csv',
-                                            listing_categories=listing_categories,
-                                            listing_details_translations=yaml.safe_load(open('listing_details_translations.yml')),
+                                            categories=['rooms'],
                                             page_start=1)
