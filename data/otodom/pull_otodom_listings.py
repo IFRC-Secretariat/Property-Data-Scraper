@@ -124,7 +124,7 @@ class PullOtodomListings(PullPropertyListings):
             except:
                 return
         data['price_num'] = data['price'].apply(lambda x: convert_units_to_num(x, unit='zł'))
-        data['surface_area_m2_num'] = data['surface_area_m2'].apply(lambda x: convert_units_to_num(x, unit='m2'))
+        data['surface_area_m2_num'] = data['surface_area_m2'].apply(lambda x: convert_units_to_num(x, unit='m²'))
         data['latitude'] = data['latitude'].apply(lambda x: convert_units_to_num(x))
         data['longitude'] = data['longitude'].apply(lambda x: convert_units_to_num(x))
         data['price_utilities_pln_num'] = data['price_utilities_pln'].apply(lambda x: convert_units_to_num(x, unit='zł/miesiąc'))

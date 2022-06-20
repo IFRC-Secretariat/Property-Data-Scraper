@@ -141,22 +141,24 @@ class PullPropertyListings:
                     continue
                 if not single_listing_url:
                     continue
-                print(single_listing_url)
-                single_page = requests.get(f'{single_listing_url}')
-                single_soup = BeautifulSoup(single_page.content, "html.parser")
 
                 # Extract individual listing information
-                try:
-                    single_listing_info = self.get_listing_details(listing_page_soup=single_soup)
-                    single_listing_info['url'] = single_listing_url
-                except Exception as err:
-                    error_message = f'\nSkipping listing due to error: {single_listing_url}\n{str(err)}'
-                    f = open("log.txt", "a")
-                    f.write(error_message)
-                    f.close()
-                    print(err)
-                    print(traceback.format_exc())
-                    continue
+                print(single_listing_url)
+                max_attempts = 20
+                for attempt in range(1, max_attempts+1):
+                    try:
+                        single_page = requests.get(f'{single_listing_url}')
+                        single_soup = BeautifulSoup(single_page.content, "html.parser")
+                        single_listing_info = self.get_listing_details(listing_page_soup=single_soup)
+                        single_listing_info['url'] = single_listing_url
+                        break
+                    except Exception as err:
+                        error_message = f'\nSkipping listing due to error: {single_listing_url}\n{str(err)}'
+                        f = open("log.txt", "a")
+                        f.write(error_message)
+                        f.close()
+                        print(err)
+                        print(traceback.format_exc())
 
                 # Append the data to the dataframe
                 data = data.append(single_listing_info, ignore_index=True)
