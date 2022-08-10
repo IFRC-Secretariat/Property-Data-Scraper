@@ -13,7 +13,7 @@ import yaml
 from collections import Counter
 
 
-class PullPropertyListings:
+class PropertyListingsPuller:
     """
     Class to pull listings from property listing websites and return a dataset.
 

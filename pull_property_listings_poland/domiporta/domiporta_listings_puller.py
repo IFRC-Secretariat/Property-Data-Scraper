@@ -1,18 +1,19 @@
 import sys
+import os
 import yaml
-sys.path.append('..')
-from pull_listings import PullPropertyListings
+from pull_property_listings_poland.property_listings_puller import PropertyListingsPuller
 
 
-class PullDomiportaListings(PullPropertyListings):
+class DomiportaListingsPuller(PropertyListingsPuller):
     """
     Pull property listings from the Polish real estate listing site, Domiporta.
     """
     def __init__(self):
         root_url = 'https://www.domiporta.pl'
         page_param = 'PageNumber'
-        listing_categories = {'mieszkanie/wynajme': 'apartments', 'dom/wynajme': 'houses', 'pokoj/wynajme': 'rooms'}
-        listing_details_translations=yaml.safe_load(open('listing_details_translations.yml'))
+        listing_categories = {'apartments': 'mieszkanie/wynajme', 'houses': 'dom/wynajme', 'rooms': 'pokoj/wynajme'}
+        __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+        listing_details_translations = yaml.safe_load(open(os.path.join(__location__, 'listing_details_translations.yml')))
         super().__init__(root_url=root_url,
                          page_param=page_param,
                          listing_categories=listing_categories,
@@ -130,13 +131,13 @@ class PullDomiportaListings(PullPropertyListings):
         return listing_details
 
 
-    def process_listing_data(self, listings_data):
+    def process_listing_data(self, data):
         """
         Process the dataset of listings.
 
         Parameters
         ----------
-        listings_data : Pandas DataFrame (required)
+        data : Pandas DataFrame (required)
             Pandas DataFrame with one row per listing.
         """
         # Process the data to convert numbers with units to just numbers
@@ -149,31 +150,24 @@ class PullDomiportaListings(PullPropertyListings):
                 return price_num
             except:
                 return
-        listings_data.rename(columns={'price':'base_price'}, inplace=True)
-        listings_data['base_price_num'] = listings_data['base_price'].apply(lambda x: convert_units_to_num(x, units='zł'))
-        listings_data['price_utilities_pln_num'] = listings_data['price_utilities_pln'].apply(lambda x: convert_units_to_num(x, units=['PLN', 'zł']))
-        listings_data['price_utilities_pln_num'] = listings_data['price_utilities_pln'].apply(lambda x: convert_units_to_num(x, units='PLN'))
-        listings_data['price_zl_per_m2_num'] = listings_data['price_zl_per_m2'].apply(lambda x: convert_units_to_num(x, units='zł/m'))
-        listings_data['surface_area_m2_num'] = listings_data['surface_area_m2'].apply(lambda x: convert_units_to_num(x, units='m2'))
-        listings_data['latitude'] = listings_data['latitude'].apply(lambda x: convert_units_to_num(x))
-        listings_data['longitude'] = listings_data['longitude'].apply(lambda x: convert_units_to_num(x))
+        data.rename(columns={'price':'base_price'}, inplace=True)
+        data['base_price_num'] = data['base_price'].apply(lambda x: convert_units_to_num(x, units='zł'))
+        if "price_utilities_pln" in data.columns:
+            data['price_utilities_pln_num'] = data['price_utilities_pln'].apply(lambda x: convert_units_to_num(x, units=['PLN', 'zł']))
+        data['price_zl_per_m2_num'] = data['price_zl_per_m2'].apply(lambda x: convert_units_to_num(x, units='zł/m'))
+        data['surface_area_m2_num'] = data['surface_area_m2'].apply(lambda x: convert_units_to_num(x, units='m2'))
+        data['latitude'] = data['latitude'].apply(lambda x: convert_units_to_num(x))
+        data['longitude'] = data['longitude'].apply(lambda x: convert_units_to_num(x))
 
         # Order the columns so that the appending to the data is consistent
-        columns_order = ['title', 'listing_page_category', 'price', 'price_num', 'currency', 'price_zl_per_m2', 'price_zl_per_m2_num', 'surface_area_m2', 'surface_area_m2_num', 'address_locality', 'street_address', 'region', 'country', 'postcode', 'latitude', 'longitude']
+        columns_order = ['title', 'listing_page_category', 'base_price', 'base_price_num', 'price_utilities_pln_num', 'currency', 'price_zl_per_m2', 'price_zl_per_m2_num', 'surface_area_m2', 'surface_area_m2_num', 'address_locality', 'street_address', 'region', 'country', 'postcode', 'latitude', 'longitude']
         columns_order += [item for item in self.listing_details_translations.values() if item not in columns_order] + ['url']
         for column in columns_order:
-            if column not in listings_data.columns:
-                listings_data[column] = ''
-        missed_columns = [column for column in listings_data.columns if column not in columns_order]
+            if column not in data.columns:
+                data[column] = ''
+        missed_columns = [column for column in data.columns if column not in columns_order]
         if missed_columns:
             raise RuntimeError(f'Missing columns: {missed_columns}')
-        listings_data = listings_data[columns_order]
+        data = data[columns_order]
 
-        return listings_data
-
-
-if __name__ == "__main__":
-    listings_puller = PullDomiportaListings()
-    listings_puller.pull_listing_categories(data_write_path='raw/testing.csv',
-                                            categories=['apartments', 'houses', 'rooms'],
-                                            page_end=5)
+        return data

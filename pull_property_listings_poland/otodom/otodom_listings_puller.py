@@ -1,11 +1,11 @@
 import sys
+import os
 import yaml
 import json
-sys.path.append('..')
-from pull_listings import PullPropertyListings
+from pull_property_listings_poland.property_listings_puller import PropertyListingsPuller
 
 
-class PullOtodomListings(PullPropertyListings):
+class OtodomListingsPuller(PropertyListingsPuller):
     """
     Pull property listings from the Polish property listings site, Otodom.
     """
@@ -13,7 +13,8 @@ class PullOtodomListings(PullPropertyListings):
         root_url = 'https://www.otodom.pl'
         page_param = 'page'
         listing_categories = {'apartments': 'pl/oferty/wynajem/mieszkanie/cala-polska', 'houses': 'pl/oferty/wynajem/dom/cala-polska'}
-        listing_details_translations = yaml.safe_load(open('listing_details_translations.yml'))
+        __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+        listing_details_translations = yaml.safe_load(open(os.path.join(__location__, 'listing_details_translations.yml')))
         super().__init__(root_url=root_url,
                          page_param=page_param,
                          listing_categories=listing_categories,
@@ -75,10 +76,13 @@ class PullOtodomListings(PullPropertyListings):
         listing_details : dict
             Dictionary mapping listing detail names to content, e.g. {"title": "My listing", "category": "flat"}.
         """
-        listing_details = {}
-        header_section = listing_page_soup.find("body").find("main").find("header")
-        listing_details["title"] = header_section.find("h1").text.strip()
-        listing_details["price"] = header_section.find("strong", {"data-cy": "adPageHeaderPrice"}, recursive=False).text.strip()
+        listing_details = {"title": None, "price": None}
+        try:
+            header_section = listing_page_soup.find("body").find("main").find("header")
+            listing_details["title"] = header_section.find("h1").text.strip()
+            listing_details["price"] = header_section.find("strong", {"data-cy": "adPageHeaderPrice"}, recursive=False).text.strip()
+        except AttributeError:
+            pass
 
         # Extract information from the details section
         details_section = listing_page_soup.find("div", {"data-testid": "ad.top-information.table"})\
@@ -151,10 +155,3 @@ class PullOtodomListings(PullPropertyListings):
         data = data[columns_order]
 
         return data
-
-
-if __name__ == "__main__":
-    listings_puller = PullOtodomListings()
-    listings_puller.pull_listing_categories(data_write_path='raw/2022-06-13_otodom_listings.csv',
-                                            categories=['houses', 'apartments'],
-                                            page_start=1)

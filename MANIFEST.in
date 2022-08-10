@@ -1,0 +1,3 @@
+include pull_property_listings_poland/domiporta/listing_details_translations.yml
+include pull_property_listings_poland/olx/listing_details_translations.yml
+include pull_property_listings_poland/otodom/listing_details_translations.yml

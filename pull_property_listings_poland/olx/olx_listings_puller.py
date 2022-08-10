@@ -1,19 +1,20 @@
 import sys
+import os
 import yaml
 import json
-sys.path.append('..')
-from pull_listings import PullPropertyListings
+from pull_property_listings_poland.property_listings_puller import PropertyListingsPuller
 
 
-class PullOlxListings(PullPropertyListings):
+class OlxListingsPuller(PropertyListingsPuller):
     """
     Pull property listings from the Polish property listings site, Olx.
     """
     def __init__(self):
         root_url = 'https://www.olx.pl'
         page_param = 'page'
-        listing_categories = {'d/nieruchomosci/stancje-pokoje/': 'rooms'}
-        listing_details_translations=yaml.safe_load(open('listing_details_translations.yml'))
+        listing_categories = {'rooms': 'd/nieruchomosci/stancje-pokoje/'}
+        __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+        listing_details_translations = yaml.safe_load(open(os.path.join(__location__, 'listing_details_translations.yml')))
         super().__init__(root_url=root_url,
                          page_param=page_param,
                          listing_categories=listing_categories,
@@ -111,13 +112,13 @@ class PullOlxListings(PullPropertyListings):
         return listing_details
 
 
-    def process_listing_data(self, listings_data):
+    def process_listing_data(self, data):
         """
         Process the dataset of listings.
 
         Parameters
         ----------
-        listings_data : Pandas DataFrame (required)
+        data : Pandas DataFrame (required)
             Pandas DataFrame with one row per listing.
         """
         # Process the data to convert numbers with units to just numbers
@@ -127,29 +128,22 @@ class PullOlxListings(PullPropertyListings):
                 return price_num
             except:
                 return
-        listings_data['price_num'] = listings_data['price'].apply(lambda x: convert_units_to_num(x, unit='zł'))
-        listings_data['latitude'] = listings_data['latitude'].apply(lambda x: convert_units_to_num(x))
-        listings_data['longitude'] = listings_data['longitude'].apply(lambda x: convert_units_to_num(x))
+        data['price_num'] = data['price'].apply(lambda x: convert_units_to_num(x, unit='zł'))
+        data['latitude'] = data['latitude'].apply(lambda x: convert_units_to_num(x))
+        data['longitude'] = data['longitude'].apply(lambda x: convert_units_to_num(x))
 
         # Order the columns so that the appending to the data is consistent
         columns_order = ['title', 'price', 'price_num', 'latitude', 'longitude', 'status']
         columns_order += [item for item in self.listing_details_translations.values() if item not in columns_order]
-        if 'listing_page_category' in listings_data.columns:
+        if 'listing_page_category' in data.columns:
             columns_order += ['listing_page_category']
         columns_order += ['url']
         for column in columns_order:
-            if column not in listings_data.columns:
-                listings_data[column] = ''
-        missed_columns = [column for column in listings_data.columns if column not in columns_order]
+            if column not in data.columns:
+                data[column] = ''
+        missed_columns = [column for column in data.columns if column not in columns_order]
         if missed_columns:
             raise RuntimeError(f'Missing columns: {missed_columns}')
-        listings_data = listings_data[columns_order]
+        data = data[columns_order]
 
-        return listings_data
-
-
-if __name__ == "__main__":
-    listings_puller = PullOlxListings()
-    listings_puller.pull_listing_categories(data_write_path='raw/2022-06-14_olx_listings.csv',
-                                            categories=['rooms'],
-                                            page_start=1)
+        return data
