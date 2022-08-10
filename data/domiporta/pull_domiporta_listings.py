@@ -140,15 +140,21 @@ class PullDomiportaListings(PullPropertyListings):
             Pandas DataFrame with one row per listing.
         """
         # Process the data to convert numbers with units to just numbers
-        def convert_units_to_num(price, unit=None):
+        def convert_units_to_num(price, units=None):
+            if type(units) is not list: units = [units]
             try:
-                price_num = float(''.join(price.strip().split(unit)[0].replace(',','.').split()))
+                for unit in units:
+                    price = price.replace(unit, '')
+                price_num = float(''.join(price.strip().replace(',','.').split()))
                 return price_num
             except:
                 return
-        listings_data['price_num'] = listings_data['price'].apply(lambda x: convert_units_to_num(x, unit='zł'))
-        listings_data['price_zl_per_m2_num'] = listings_data['price_zl_per_m2'].apply(lambda x: convert_units_to_num(x, unit='zł/m'))
-        listings_data['surface_area_m2_num'] = listings_data['surface_area_m2'].apply(lambda x: convert_units_to_num(x, unit='m2'))
+        listings_data.rename(columns={'price':'base_price'}, inplace=True)
+        listings_data['base_price_num'] = listings_data['base_price'].apply(lambda x: convert_units_to_num(x, units='zł'))
+        listings_data['price_utilities_pln_num'] = listings_data['price_utilities_pln'].apply(lambda x: convert_units_to_num(x, units=['PLN', 'zł']))
+        listings_data['price_utilities_pln_num'] = listings_data['price_utilities_pln'].apply(lambda x: convert_units_to_num(x, units='PLN'))
+        listings_data['price_zl_per_m2_num'] = listings_data['price_zl_per_m2'].apply(lambda x: convert_units_to_num(x, units='zł/m'))
+        listings_data['surface_area_m2_num'] = listings_data['surface_area_m2'].apply(lambda x: convert_units_to_num(x, units='m2'))
         listings_data['latitude'] = listings_data['latitude'].apply(lambda x: convert_units_to_num(x))
         listings_data['longitude'] = listings_data['longitude'].apply(lambda x: convert_units_to_num(x))
 
