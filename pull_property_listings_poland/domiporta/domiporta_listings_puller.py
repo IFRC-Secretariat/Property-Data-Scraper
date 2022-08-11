@@ -6,7 +6,6 @@ Categories of properties supported are:
 - Houses
 - Rooms
 """
-import sys
 import os
 import yaml
 from pull_property_listings_poland.property_listings_puller import PropertyListingsPuller
@@ -21,7 +20,7 @@ class DomiportaListingsPuller(PropertyListingsPuller):
         page_param = 'PageNumber'
         listing_categories = {'apartments': 'mieszkanie/wynajme', 'houses': 'dom/wynajme', 'rooms': 'pokoj/wynajme'}
         __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-        listing_details_translations = yaml.safe_load(open(os.path.join(__location__, 'listing_details_translations.yml')))
+        listing_details_translations = yaml.safe_load(open(os.path.join(__location__, 'listing_details_translations.yml'), encoding='utf-8'))
         super().__init__(root_url=root_url,
                          page_param=page_param,
                          listing_categories=listing_categories,
@@ -42,10 +41,10 @@ class DomiportaListingsPuller(PropertyListingsPuller):
         listings_list : list
             List of listings.
         """
-        listings_list = listings = listings_page_soup.find("div", {"class": "listing"})\
-                                                     .find("div", {"class": "listing__container"})\
-                                                     .find("ul", {"class": "grid"})\
-                                                     .find_all("li", {"class": "grid-item"})
+        listings_list = listings_page_soup.find("div", {"class": "listing"})\
+                                          .find("div", {"class": "listing__container"})\
+                                          .find("ul", {"class": "grid"})\
+                                          .find_all("li", {"class": "grid-item"})
         return listings_list
 
 

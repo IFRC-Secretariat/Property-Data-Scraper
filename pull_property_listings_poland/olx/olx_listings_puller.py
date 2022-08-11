@@ -4,10 +4,8 @@ Module to pull and clean property listings from the Polish property listing site
 Categories of properties supported are:
 - Rooms
 """
-import sys
 import os
 import yaml
-import json
 from pull_property_listings_poland.property_listings_puller import PropertyListingsPuller
 
 
@@ -20,7 +18,7 @@ class OlxListingsPuller(PropertyListingsPuller):
         page_param = 'page'
         listing_categories = {'rooms': 'd/nieruchomosci/stancje-pokoje/'}
         __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-        listing_details_translations = yaml.safe_load(open(os.path.join(__location__, 'listing_details_translations.yml')))
+        listing_details_translations = yaml.safe_load(open(os.path.join(__location__, 'listing_details_translations.yml'), encoding='utf-8'))
         super().__init__(root_url=root_url,
                          page_param=page_param,
                          listing_categories=listing_categories,

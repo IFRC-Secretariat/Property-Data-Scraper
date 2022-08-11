@@ -9,8 +9,6 @@ from urllib.parse import urlparse
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import yaml
-from collections import Counter
 
 
 class PropertyListingsPuller:
@@ -67,7 +65,7 @@ class PropertyListingsPuller:
         try:
             listing_categories = {category: self.listing_categories[category] for category in categories}
         except KeyError as err:
-            raise KeyError(f'Unrecognised listing category {err}')
+            raise KeyError(f'Unrecognised listing category {err}') from err
 
         # Loop through categories, pull data for each category, and save
         for category_name, category_url in listing_categories.items():
@@ -190,6 +188,23 @@ class PropertyListingsPuller:
                 if page_number >= page_end:
                     break
             page_number += 1
+
+
+    def get_listings_list(self, listings_page_soup):
+        """
+        Get the list of listings from the listings page. This method should be defined in the child class so raise a NotImplementedError.
+
+        Parameters
+        ----------
+        listings_page_soup : BeautifulSoup (required)
+            Soup of the listings page.
+
+        Returns
+        -------
+        listings_list : list
+            List of listings.
+        """
+        raise NotImplementedError
 
 
     def convert_relative_url(self, url):
