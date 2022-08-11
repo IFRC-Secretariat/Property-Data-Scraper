@@ -11,10 +11,10 @@ Currently the sites included for pulling data from are:
 
 
 ## Setup and installation
-To install the project, run the following in a bash terminal:
+To install the project, run the following in a bash terminal from the top-level of the project:
 
 ```bash
-pip3 install pull_property_listings_poland
+pip3 install .
 ```
 
 ## Examples
