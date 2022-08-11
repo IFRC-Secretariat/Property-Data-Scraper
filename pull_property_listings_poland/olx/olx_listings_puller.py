@@ -1,3 +1,9 @@
+"""
+Module to pull and clean property listings from the Polish property listing site, Olx (https://www.olx.pl/).
+
+Categories of properties supported are:
+- Rooms
+"""
 import sys
 import os
 import yaml
@@ -114,12 +120,17 @@ class OlxListingsPuller(PropertyListingsPuller):
 
     def process_listing_data(self, data):
         """
-        Process the dataset of listings.
+        Process the dataset of listings, including removing units from columns and converting to numbers, and ordering the columns.
 
         Parameters
         ----------
         data : Pandas DataFrame (required)
             Pandas DataFrame with one row per listing.
+
+        Returns
+        -------
+        data : Pandas DataFrame
+            Pandas DataFrame of processed data.
         """
         # Process the data to convert numbers with units to just numbers
         def convert_units_to_num(price, unit=None):
@@ -133,10 +144,8 @@ class OlxListingsPuller(PropertyListingsPuller):
         data['longitude'] = data['longitude'].apply(lambda x: convert_units_to_num(x))
 
         # Order the columns so that the appending to the data is consistent
-        columns_order = ['title', 'price', 'price_num', 'latitude', 'longitude', 'status']
+        columns_order = ['title', 'price', 'price_num', 'latitude', 'longitude', 'status', 'listing_page_category']
         columns_order += [item for item in self.listing_details_translations.values() if item not in columns_order]
-        if 'listing_page_category' in data.columns:
-            columns_order += ['listing_page_category']
         columns_order += ['url']
         for column in columns_order:
             if column not in data.columns:

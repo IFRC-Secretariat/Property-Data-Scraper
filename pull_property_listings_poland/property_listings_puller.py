@@ -1,7 +1,5 @@
 """
-Script to pull rental listings for the Polish estate agent website, Domiporta (https://www.domiporta.pl/).
-
-Note that data will be appended to the file in the data folder, so this file should be deleted if you want to create a new file.
+Module for pulling rental listings from property listing sites.
 """
 import os
 import traceback
@@ -46,8 +44,17 @@ class PropertyListingsPuller:
 
         Parameters
         ----------
-        categories : list
+        categories : list (required)
             List of categories to pull, e.g. ['houses', 'apartments'].
+
+        data_write_path : string (required)
+            Location to write the results to, must be a CSV file.
+
+        page_start : int (default=1)
+            Number of the page to start pulling listings from, by default starts at the first page (1).
+
+        page_end : int (default=None)
+            Number of the last page to pull listings from. By default pulls listings from all pages.
         """
         # Print a warning if the file already exists
         if os.path.exists(data_write_path):
@@ -73,7 +80,7 @@ class PropertyListingsPuller:
 
     def pull_listings(self, data_write_path, page_slug, extra_listing_info=None, page_start=1, page_end=None, mode='a', suppress_overwrite_warning=False):
         """
-        Pull a dataset of listings from the property website and write to a file.
+        Pull a dataset of listings from the property website and save it to a file.
         By default results are appended to the file to enable stopping and starting.
 
         Parameters
@@ -95,6 +102,9 @@ class PropertyListingsPuller:
 
         mode : string (default='a')
             Mode used to write the final dataset. Default is append.
+
+        suppress_overwrite_warning : bool (default=False)
+            If True, the warning for overwriting files will not be printed. This can be useful for debugging purposes.
         """
         # Check if the write file exists and print a warning
         if not suppress_overwrite_warning:
@@ -184,6 +194,11 @@ class PropertyListingsPuller:
         """
         Convert a relative URL to an absolute URL.
         If the URL is an absolute URL of another site, raise an error.
+
+        Parameters
+        ----------
+        url : string (required)
+            URL to be checked.
         """
         if not url:
             return

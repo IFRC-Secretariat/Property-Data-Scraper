@@ -1,3 +1,11 @@
+"""
+Module to pull and clean property listings from the Polish property listing site, Domiporta (https://www.domiporta.pl/).
+
+Categories of properties supported are:
+- Apartments
+- Houses
+- Rooms
+"""
 import sys
 import os
 import yaml
@@ -133,12 +141,17 @@ class DomiportaListingsPuller(PropertyListingsPuller):
 
     def process_listing_data(self, data):
         """
-        Process the dataset of listings.
+        Process the dataset of listings, including removing units from columns and converting to numbers, and ordering the columns.
 
         Parameters
         ----------
         data : Pandas DataFrame (required)
             Pandas DataFrame with one row per listing.
+
+        Returns
+        -------
+        data : Pandas DataFrame
+            Pandas DataFrame of processed data.
         """
         # Process the data to convert numbers with units to just numbers
         def convert_units_to_num(price, units=None):

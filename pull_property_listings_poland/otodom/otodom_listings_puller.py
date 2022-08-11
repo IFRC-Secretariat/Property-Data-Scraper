@@ -1,3 +1,10 @@
+"""
+Module to pull and clean property listings from the Polish property listing site, Otodom (https://www.otodom.pl/).
+
+Categories of properties supported are:
+- Apartments
+- Houses
+"""
 import sys
 import os
 import yaml
@@ -113,12 +120,17 @@ class OtodomListingsPuller(PropertyListingsPuller):
 
     def process_listing_data(self, data):
         """
-        Process the dataset of listings.
+        Process the dataset of listings, including removing units from columns and converting to numbers, and ordering the columns.
 
         Parameters
         ----------
         data : Pandas DataFrame (required)
             Pandas DataFrame with one row per listing.
+
+        Returns
+        -------
+        data : Pandas DataFrame
+            Pandas DataFrame of processed data.
         """
         # Process the data to convert numbers with units to just numbers
         def convert_units_to_num(price, unit=None):
@@ -142,10 +154,8 @@ class OtodomListingsPuller(PropertyListingsPuller):
         data['price_zl_per_m2_num'] = data.apply(lambda row: divide_ignore_nan(row['price_num'], row['surface_area_m2_num']), axis=1)
 
         # Order the columns so that the appending to the data is consistent
-        columns_order = ['title', 'price', 'price_num', 'price_zl_per_m2_num', 'surface_area_m2_num', 'price_utilities_pln_num', 'latitude', 'longitude']
+        columns_order = ['title', 'price', 'price_num', 'price_zl_per_m2_num', 'surface_area_m2_num', 'price_utilities_pln_num', 'latitude', 'longitude', 'listing_page_category']
         columns_order += [item for item in self.listing_details_translations.values() if item not in columns_order] + ['url']
-        if 'listing_page_category' in data.columns:
-            columns_order += ['listing_page_category']
         for column in columns_order:
             if column not in data.columns:
                 data[column] = ''
