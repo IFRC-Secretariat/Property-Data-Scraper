@@ -1,5 +1,7 @@
 """
 Module for pulling rental listings from property listing sites.
+
+Note that this is a generic base class and shouldn't be used by itself, only through its derived classes.
 """
 import os
 import traceback
@@ -171,7 +173,7 @@ class PropertyListingsPuller:
                         print(traceback.format_exc())
 
                 # Append the data to the dataframe
-                data = data.append(single_listing_info, ignore_index=True)
+                data = pd.concat([data, pd.DataFrame([single_listing_info])])
 
             # Process athe data
             data = self.process_listing_data(data=data)
