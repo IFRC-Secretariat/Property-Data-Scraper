@@ -133,8 +133,8 @@ class PropertyListingsPuller:
                 break
             if not listings:
                 break
-            if listings_page.history:
-                if listings_page.history[0].status_code==301:
+            if listings_page.history and page_number!=1:
+                if listings_page.history[0].status_code in [301, 302]:
                     break
 
             # Loop through all listings on the page
@@ -160,6 +160,7 @@ class PropertyListingsPuller:
                         single_page = requests.get(f'{single_listing_url}')
                         single_soup = BeautifulSoup(single_page.content, "html.parser")
                         single_listing_info = self.get_listing_details(listing_page_soup=single_soup)
+                        single_listing_info['page'] = page_number
                         single_listing_info['url'] = single_listing_url
                         break
                     except Exception as err:
@@ -173,7 +174,7 @@ class PropertyListingsPuller:
                 # Append the data to the dataframe
                 data = pd.concat([data, pd.DataFrame([single_listing_info])])
 
-            # Process athe data
+            # Process the data
             data = self.process_listing_data(data=data)
             if extra_listing_info is not None:
                 for name, value in extra_listing_info.items():
