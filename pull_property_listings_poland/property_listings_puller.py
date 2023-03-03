@@ -43,44 +43,6 @@ class PropertyListingsPuller:
         self.listing_details_translations = listing_details_translations
 
 
-    def pull_listing_categories(self, categories, data_write_path, page_start=1, page_end=None):
-        """
-        Pull listings from multiple listing pages.
-
-        Parameters
-        ----------
-        categories : list (required)
-            List of categories to pull, e.g. ['houses', 'apartments'].
-
-        data_write_path : string (required)
-            Location to write the results to, must be a CSV file.
-
-        page_start : int (default=1)
-            Number of the page to start pulling listings from, by default starts at the first page (1).
-
-        page_end : int (default=None)
-            Number of the last page to pull listings from. By default pulls listings from all pages.
-        """
-        # Print a warning if the file already exists
-        if os.path.exists(data_write_path):
-            input(f'WARNING: data will overwrite the existing data file at {data_write_path}. Press enter to continue.')
-            os.remove(data_write_path)
-
-        # Get the categories
-        try:
-            listing_categories = {category: self.listing_categories[category] for category in categories}
-        except KeyError as err:
-            raise KeyError(f'Unrecognised listing category {err}') from err
-
-        # Loop through categories, pull data for each category, and save
-        for category_name, category_url in listing_categories.items():
-            self.pull_listings(data_write_path=data_write_path,
-                               page_slug=category_url,
-                               page_start=page_start,
-                               page_end=page_end,
-                               suppress_overwrite_warning=True)
-
-
     def pull_listings(self, data_write_path, page_slug, get_listing_preview=True, get_listing_page=True, page_start=1, page_end=None, suppress_overwrite_warning=False):
         """
         Pull a dataset of listings from the property website and save it to a file.
