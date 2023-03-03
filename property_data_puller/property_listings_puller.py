@@ -39,7 +39,7 @@ class PropertyListingsPuller:
         self.listing_details_translations = listing_details_translations
 
 
-    def pull_listings(self, data_write_path, page_slug, get_listing_preview=True, get_listing_page=True, page_start=1, page_end=None, suppress_overwrite_warning=False):
+    def pull_listings(self, data_write_path, listing_page_slug, get_listing_previews=True, get_listing_pages=True, page_start=1, page_end=None):
         """
         Pull a dataset of listings from the property website and save it to a file.
         By default results are appended to the file to enable stopping and starting.
@@ -50,13 +50,13 @@ class PropertyListingsPuller:
             The location of the CSV file to write the dataset of listings to.
             Note that this is required so that the data is saved after every page, because often there are a lot of pages, so if the program crashes before finishing all the pages there is still data saved.
 
-        page_slug : string (required)
+        listing_page_slug : string (required)
             A slug to be added to the root url to give the URL of the listings page.
 
-        get_listing_preview : bool (default=True)
+        get_listing_previews : bool (default=True)
             If True, information will be extracted from the listing preview (the listing details on the listings page).
 
-        get_listing_page : bool (default=True)
+        get_listing_pages : bool (default=True)
             If True, each single listing page will be requested and information will be extracted.
 
         page_start : int (default=1)
@@ -64,15 +64,12 @@ class PropertyListingsPuller:
 
         page_end : int (default=None)
             Number of pages to pull. If None, all pages will be pulled.
-
-        suppress_overwrite_warning : bool (default=False)
-            If True, the warning for overwriting files will not be printed. This can be useful for debugging purposes.
         """
         # Loop through listing pages and pull data
         page_number = page_start
         while True:
             data = []
-            listings_page_url = f'{self.root_url}/{page_slug}?{self.page_param}={page_number}'
+            listings_page_url = f'{self.root_url}/{listing_page_slug}?{self.page_param}={page_number}'
             print(f'\nSearching listings in page {page_number}... {listings_page_url}')
             try:
                 listings_page = requests.get(listings_page_url)
@@ -96,7 +93,7 @@ class PropertyListingsPuller:
                 listing_data = {}
 
                 # Get the information from the listing preview on the listings page
-                if get_listing_preview:
+                if get_listing_previews:
                     try:
                         listing_preview_info = self.get_listing_preview_data(single_listing)
                         listing_data = {**listing_data, **listing_preview_info}
@@ -113,7 +110,7 @@ class PropertyListingsPuller:
                     print(f'Error with finding the URL for listing {i} on page {listings_page_url}')
 
                 # Request the single listing page and extract the listing information
-                if get_listing_page and single_listing_url:
+                if get_listing_pages and single_listing_url:
                     print(single_listing_url)
                     max_attempts = 20
                     for attempt in range(1, max_attempts+1):

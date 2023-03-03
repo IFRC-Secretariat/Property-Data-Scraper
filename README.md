@@ -28,8 +28,8 @@ raw_data_path = 'hepsiemlak_property_data.csv'
 listings_puller = property_data_puller.HepsiemlakListingsPuller()
 listings_puller.pull_listings(data_write_path=raw_data_path, 
                               page_slug='kiralik', 
-                              get_listing_preview=True,
-                              get_listing_page=True)
+                              get_listing_previews=True,
+                              get_listing_pages=True)
 
 # Read in the raw data and process
 raw_listings = pd.read_csv(raw_data_path)
