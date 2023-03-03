@@ -21,22 +21,19 @@ pip3 install .
 The following is an example of how to pull Domiporta, Olx, and Otodom data for specified listing categories.
 
 ```python
-from pull_property_listings_poland.domiporta import DomiportaListingsPuller
-from pull_property_listings_poland.olx import OlxListingsPuller
-from pull_property_listings_poland.otodom import OtodomListingsPuller
+import pull_property_listings_poland
 
-# Pull Domiporta data
-listings_puller = DomiportaListingsPuller()
-listings_puller.pull_listing_categories(data_write_path='domiporta_data.csv',
-                                        categories=['apartments', 'houses', 'rooms'])
-# Pull Olx data
-listings_puller = OlxListingsPuller()
-listings_puller.pull_listing_categories(data_write_path='olx_data.csv',
-                                        categories=['rooms'])
-# Pull Otodom data
-listings_puller = OtodomListingsPuller()
-listings_puller.pull_listing_categories(data_write_path='otodom_data.csv',
-                                        categories=['houses', 'apartments'])
+# Pull Hepsiemlak data and save
+raw_data_path = 'hepsiemlak_property_data.csv'
+listings_puller = pull_property_listings_poland.HepsiemlakListingsPuller()
+listings_puller.pull_listings(data_write_path=raw_data_path, 
+                              page_slug='kiralik', 
+                              get_listing_preview=True,
+                              get_listing_page=True)
+
+# Read in the raw data and process
+raw_listings = pd.read_csv(raw_data_path)
+processed_listings = listings_puller.process_data(raw_listings)
 ```
 
 ## Contact
