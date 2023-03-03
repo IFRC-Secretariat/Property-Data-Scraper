@@ -78,7 +78,7 @@ class PropertyListingsPuller:
                                suppress_overwrite_warning=True)
 
 
-    def pull_listings(self, data_write_path, page_slug, extra_listing_info=None, page_start=1, page_end=None, mode='a', suppress_overwrite_warning=False):
+    def pull_listings(self, data_write_path, page_slug, get_listing_preview=True, get_listing_page=True, extra_listing_info=None, page_start=1, page_end=None, mode='a', suppress_overwrite_warning=False):
         """
         Pull a dataset of listings from the property website and save it to a file.
         By default results are appended to the file to enable stopping and starting.
@@ -90,6 +90,12 @@ class PropertyListingsPuller:
 
         page_slug : string (required)
             A slug to be added to the root url to give the URL of the listings page.
+
+        get_listing_preview : bool (default=True)
+            If True, information will be extracted from the listing preview (the listing details on the listings page).
+
+        get_listing_page : bool (default=True)
+            If True, each single listing page will be requested and information will be extracted.
 
         extra_listing_info : dict (default=None)
             Any extra information to add to the listings dataset, e.g. category information.
@@ -117,7 +123,7 @@ class PropertyListingsPuller:
         # Loop through listing pages and pull data
         page_number = page_start
         while True:
-            data = pd.DataFrame()
+            data = []
             listings_page_url = f'{self.root_url}/{page_slug}?{self.page_param}={page_number}'
             print(f'\nSearching listings in page {page_number}... {listings_page_url}')
             try:
@@ -139,42 +145,53 @@ class PropertyListingsPuller:
 
             # Loop through all listings on the page
             for i, single_listing in enumerate(listings):
+                listing_data = {}
 
-                # Get the single listing URL and request the single listing page
+                # Get the information from the listing preview on the listings page
+                if get_listing_preview:
+                    try:
+                        listing_preview_info = self.get_listing_preview_data(single_listing)
+                        listing_data = {**listing_data, **listing_preview_info}
+                    except NotImplementedError as err:
+                        continue
+
+                # Get the single listing URL
+                listing_data['Page'] = page_number
                 try:
                     single_listing_url = self.get_listing_url(single_listing)
                     single_listing_url = self.convert_relative_url(single_listing_url)
-                except TypeError as err:
+                    listing_data["URL"] = single_listing_url
+                except Exception as err:
                     print(f'Error with finding the URL for listing {i} on page {listings_page_url}')
-                    raise TypeError(err)
-                except ValueError as err:
-                    continue
-                if not single_listing_url:
-                    continue
 
-                # Extract individual listing information
-                print(single_listing_url)
-                max_attempts = 20
-                for attempt in range(1, max_attempts+1):
-                    try:
-                        single_page = requests.get(f'{single_listing_url}')
-                        single_soup = BeautifulSoup(single_page.content, "html.parser")
-                        single_listing_info = self.get_listing_details(listing_page_soup=single_soup)
-                        single_listing_info['page'] = page_number
-                        single_listing_info['url'] = single_listing_url
-                        break
-                    except Exception as err:
-                        error_message = f'\nSkipping listing due to error: {single_listing_url}\n{str(err)}'
-                        f = open("log.txt", "a")
-                        f.write(error_message)
-                        f.close()
-                        print(err)
-                        print(traceback.format_exc())
+                # Request the single listing page and extract the listing information
+                if get_listing_page and single_listing_url:
+                    print(single_listing_url)
+                    max_attempts = 20
+                    for attempt in range(1, max_attempts+1):
+                        try:
+                            single_page = requests.get(f'{single_listing_url}')
+                            single_soup = BeautifulSoup(single_page.content, "html.parser")
+                            single_listing_info = self.get_listing_details(listing_page_soup=single_soup)
+                            break
+                        except Exception as err:
+                            error_message = f'\nSkipping listing due to error: {single_listing_url}\n{str(err)}'
+                            f = open("log.txt", "a")
+                            f.write(error_message)
+                            f.close()
+                            print(err)
+                            print(traceback.format_exc())
+                    listing_data = {**listing_data, **single_listing_info}
 
-                # Append the data to the dataframe
-                data = pd.concat([data, pd.DataFrame([single_listing_info])])
+                # Append the listing data to the main data
+                data.append(listing_data)
 
             # Process the data
+            data = pd.DataFrame(data)
+            data_columns = ["Title", "Price", "Deposit", "Date", "Update date", "Location 1", "Location 2", "Location 3", "Listing type", "Listing category", "Property type", "Area m2", "Total m2", "Rooms + halls", "Building age", "Floor type", "Page", "URL"]
+            for column in data_columns:
+                if column not in data.columns:
+                    data[column] = ""
             data = self.process_listing_data(data=data)
             if extra_listing_info is not None:
                 for name, value in extra_listing_info.items():
@@ -204,6 +221,18 @@ class PropertyListingsPuller:
         -------
         listings_list : list
             List of listings.
+        """
+        raise NotImplementedError
+
+
+    def get_listing_preview_data(self, listing_preview_soup):
+        """
+        Get the list of listings from the listings page. This method should be defined in the child class so raise a NotImplementedError.
+
+        Parameters
+        ----------
+        listing_preview_soup : BeautifulSoup (required)
+            Soup of the listing preview (element of the listings list).
         """
         raise NotImplementedError
 

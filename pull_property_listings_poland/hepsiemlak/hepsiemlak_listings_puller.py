@@ -48,6 +48,50 @@ class HepsiemlakListingsPuller(PropertyListingsPuller):
         return listings_list
 
 
+    def get_listing_preview_data(self, listing_preview_soup):
+        """
+        Get information from the listing on the listings page.
+
+        Parameters
+        ----------
+        listing_preview_soup : BeautifulSoup (required)
+            Soup of the single listing on the listings page.
+
+        Returns
+        -------
+        listing_data : dict
+            Dictionary mapping listing detail names to content, e.g. {"title": "My listing", "category": "flat"}.
+        """
+        listing_data = {}
+
+        # Get the main information
+        listing_content = listing_preview_soup.find("div", {"class": "list-view-content"})
+        listing_data["Price"] = listing_content.find("span", {"class": "list-view-price"})
+        listing_data["Date"] = listing_content.find("span", {"class": "list-view-date"})
+        listing_data["Title"] = listing_content.find("div", {"class": "list-view-title"})
+
+        # Get other details
+        listing_details = listing_content.find("div", {"class": "card-bottom-cage"})\
+                                        .find("div", {"class": "card-bottom-cage--left"})
+        main_listing_details = listing_details.find("div", {"class": "top"})
+        listing_data["Listing type"] = main_listing_details.find("div", {"class": "left"}).find_all("span")[0]
+        listing_data["Property type"] = main_listing_details.find("div", {"class": "left"}).find_all("span")[1]
+        listing_data["Rooms + halls"] = main_listing_details.find("span", {"class": "houseRoomCount"})
+        listing_data["Area m2"] = main_listing_details.find("span", {"class": "squareMeter"})
+        listing_data["Building age"] = main_listing_details.find("span", {"class": "buildingAge"})
+        listing_data["Floor type"] = main_listing_details.find("span", {"class": "floortype"})
+        listing_location = listing_details.find("div", {"class": "list-view-location"})
+        listing_data["Location 1"] = listing_location.find_all("span", recursive=False)[0]
+        listing_data["Location 2"] = listing_location.find_all("span", recursive=False)[1]
+
+        # Extract the text and strip whitespace
+        for name, value in listing_data.items():
+            if value is not None:
+                listing_data[name] = value.text.strip()
+
+        return listing_data
+
+
     def get_listing_url(self, listing_soup):
         """
         Get the relative url of a single listing from the single listing soup on the listings page.
@@ -143,34 +187,41 @@ class HepsiemlakListingsPuller(PropertyListingsPuller):
             Pandas DataFrame of processed data.
         """
         # Convert the price data to numeric
-        data['Price (num)'] = data['Price'].str.replace('TL', '', regex=False)\
-                                         .str.replace('.','', regex=False)\
-                                         .str.strip()\
-                                         .astype(float, errors='ignore')
-        data['Deposit (num)'] = data['Deposit'].str.replace('TL', '', regex=False)\
-                                               .str.replace('.','', regex=False)\
-                                               .str.strip()\
-                                               .astype(float, errors='ignore')
+        data['Price (num)'] = data['Price'].str.strip("TL")\
+                                           .str.strip("GBP")\
+                                           .str.replace(".", "", regex=False)\
+                                           .str.strip()\
+                                           .astype(float, errors='ignore')
+        data['Deposit (num)'] = data['Deposit'].str.strip("TL")\
+                                                .str.strip("GBP")\
+                                                .str.replace(".", "", regex=False)\
+                                                .str.strip()\
+                                                .astype(float, errors='ignore')
         
         # Convert dates
-        data['Update date'] = pd.to_datetime(data['Update date'], errors='ignore', format='yyyy-mm-dd')
+        data["Date"] = pd.to_datetime(data["Date"], format='%d-%m-%Y')
+        data['Update date'] = pd.to_datetime(data['Update date'], errors='ignore', format='%Y-%m-%d')
 
         # Convert number of rooms and square metres to number
         data['Rooms'] = data['Rooms + halls'].str.split('+').str[0]\
-                                                .str.strip()\
-                                                .astype(float, errors='ignore')
+                                             .str.strip()\
+                                             .astype(float, errors='ignore')
         data['Halls'] = data['Rooms + halls'].str.split('+').str[1]\
-                                                .str.strip()\
-                                                .astype(float, errors='ignore')
+                                              .str.strip()\
+                                              .astype(float, errors='ignore')
+
+        # Format the location
+        data["Location"] = data["Location 1"]+" "+data["Location 2"]
+        data["Location 1"] = data["Location 1"].str.strip(",").str.strip()
 
         # Order the columns
-        first_columns = ['Title', 'Update date',
+        first_columns = ['Title', 'Date', 'Update date',
                          'Price', 'Price (num)', 
                          'Location 1', 'Location 2', 'Location 3', 
                          'Listing category', 'Property type', 
                          'Rooms', 'Halls', 'Total m2',
                          'Deposit (num)']
-        last_columns = ['page', 'url']
+        last_columns = ['Page', 'URL']
         columns_order = first_columns+[column for column in data.columns if column not in first_columns+last_columns]+last_columns
         data = data[columns_order]
 
