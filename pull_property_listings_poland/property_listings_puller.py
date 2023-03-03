@@ -23,9 +23,6 @@ class PropertyListingsPuller:
     page_param : string (required)
         The name of the parameter that is in the URL to specify the page number.
 
-    listing_categories : dict (required)
-        Dictionary mapping category names to relative URLs for those categories.
-
     data_columns : list (required)
         List of the columns/ information from the listings, e.g. ['Title', 'Price', 'Description'].
         This is required because the data for each listing page is appended to the CSV file, so this ensures that the columns are the same each time.
@@ -33,10 +30,9 @@ class PropertyListingsPuller:
     listing_details_translations : dict (default=None)
         Dictionary mapping listing detail names to a translation. The order of keys will also be used to order the columns of the final dataset. 
     """
-    def __init__(self, root_url, page_param, listing_categories, data_columns, listing_details_translations=None):
+    def __init__(self, root_url, page_param, data_columns, listing_details_translations=None):
         self.root_url = root_url
         self.page_param = page_param
-        self.listing_categories = listing_categories
         self.data_columns = data_columns
         if listing_details_translations is None:
             listing_details_translations = []

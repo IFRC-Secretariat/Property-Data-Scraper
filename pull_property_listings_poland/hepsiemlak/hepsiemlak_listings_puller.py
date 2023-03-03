@@ -19,14 +19,12 @@ class HepsiemlakListingsPuller(PropertyListingsPuller):
     def __init__(self):
         root_url = 'https://www.hepsiemlak.com'
         page_param = 'page'
-        listing_categories = {'rental': 'kiralik'}
         data_columns = ["Title", "Price", "Deposit", "Date", "Update date", "Location", "Location 1", "Location 2", "Location 3", "Listing type", "Property type", "Listing category", "Total m2", "Area m2", "Rooms + halls", "Building age", "Floor type", "Description"]
         __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
         listing_details_translations = yaml.safe_load(open(os.path.join(__location__, 'listing_details_translations.yml'), encoding='utf-8'))
         super().__init__(
             root_url=root_url,
             page_param=page_param,
-            listing_categories=listing_categories,
             listing_details_translations=listing_details_translations,
             data_columns=data_columns,
         )

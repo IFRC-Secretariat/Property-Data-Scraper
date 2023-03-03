@@ -18,13 +18,11 @@ class DomiportaListingsPuller(PropertyListingsPuller):
     def __init__(self):
         root_url = 'https://www.domiporta.pl'
         page_param = 'PageNumber'
-        listing_categories = {'apartments': 'mieszkanie/wynajme', 'houses': 'dom/wynajme', 'rooms': 'pokoj/wynajme'}
         data_columns = ['title', 'listing_page_category', 'base_price', 'base_price_num', 'price_utilities_pln_num', 'currency', 'price_zl_per_m2', 'price_zl_per_m2_num', 'surface_area_m2', 'surface_area_m2_num', 'address_locality', 'street_address', 'region', 'country', 'postcode', 'latitude', 'longitude']
         __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
         listing_details_translations = yaml.safe_load(open(os.path.join(__location__, 'listing_details_translations.yml'), encoding='utf-8'))
         super().__init__(root_url=root_url,
                          page_param=page_param,
-                         listing_categories=listing_categories,
                          data_columns=data_columns,
                          listing_details_translations=listing_details_translations)
 
