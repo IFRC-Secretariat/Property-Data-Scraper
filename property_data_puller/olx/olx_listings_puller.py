@@ -6,7 +6,7 @@ Categories of properties supported are:
 """
 import os
 import yaml
-from pull_property_listings_poland.property_listings_puller import PropertyListingsPuller
+from property_data_puller.property_listings_puller import PropertyListingsPuller
 
 
 class OlxListingsPuller(PropertyListingsPuller):
