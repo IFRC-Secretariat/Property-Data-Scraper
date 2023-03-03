@@ -27,7 +27,7 @@ import property_data_puller
 raw_data_path = 'hepsiemlak_property_data.csv'
 listings_puller = property_data_puller.HepsiemlakListingsPuller()
 listings_puller.pull_listings(data_write_path=raw_data_path, 
-                              page_slug='kiralik', 
+                              listing_page_slug='kiralik', 
                               get_listing_previews=True,
                               get_listing_pages=True)
 
