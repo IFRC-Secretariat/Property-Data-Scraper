@@ -20,12 +20,16 @@ class HepsiemlakListingsPuller(PropertyListingsPuller):
         root_url = 'https://www.hepsiemlak.com'
         page_param = 'page'
         listing_categories = {'rental': 'kiralik'}
+        data_columns = ["Title", "Price", "Deposit", "Date", "Update date", "Location", "Location 1", "Location 2", "Location 3", "Listing type", "Property type", "Listing category", "Total m2", "Area m2", "Rooms + halls", "Building age", "Floor type", "Description"]
         __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
         listing_details_translations = yaml.safe_load(open(os.path.join(__location__, 'listing_details_translations.yml'), encoding='utf-8'))
-        super().__init__(root_url=root_url,
-                         page_param=page_param,
-                         listing_categories=listing_categories,
-                         listing_details_translations=listing_details_translations)
+        super().__init__(
+            root_url=root_url,
+            page_param=page_param,
+            listing_categories=listing_categories,
+            listing_details_translations=listing_details_translations,
+            data_columns=data_columns,
+        )
 
 
     def get_listings_list(self, listings_page_soup):
@@ -172,7 +176,7 @@ class HepsiemlakListingsPuller(PropertyListingsPuller):
         return listing_details
 
 
-    def process_listing_data(self, data):
+    def process_data(self, data):
         """
         Process the dataset of listings, including removing units from columns and converting to numbers, and ordering the columns.
 
@@ -192,7 +196,8 @@ class HepsiemlakListingsPuller(PropertyListingsPuller):
                                            .str.replace(".", "", regex=False)\
                                            .str.strip()\
                                            .astype(float, errors='ignore')
-        data['Deposit (num)'] = data['Deposit'].str.strip("TL")\
+        data['Deposit (num)'] = data['Deposit'].astype(str)\
+                                                .str.strip("TL")\
                                                 .str.strip("GBP")\
                                                 .str.replace(".", "", regex=False)\
                                                 .str.strip()\
@@ -214,15 +219,16 @@ class HepsiemlakListingsPuller(PropertyListingsPuller):
         data["Location"] = data["Location 1"]+" "+data["Location 2"]
         data["Location 1"] = data["Location 1"].str.strip(",").str.strip()
 
-        # Order the columns
+        # Order the columns and drop all nan
         first_columns = ['Title', 'Date', 'Update date',
-                         'Price', 'Price (num)', 
+                         'Price', 'Price (num)', 'Deposit', 'Deposit (num)',
                          'Location 1', 'Location 2', 'Location 3', 
-                         'Listing category', 'Property type', 
-                         'Rooms', 'Halls', 'Total m2',
-                         'Deposit (num)']
+                         'Total m2', 'Area m2',
+                         'Listing category', 'Listing type', 'Property type', 
+                         'Rooms', 'Halls', 'Building age', 'Floor type',
+                         'Description']
         last_columns = ['Page', 'URL']
-        columns_order = first_columns+[column for column in data.columns if column not in first_columns+last_columns]+last_columns
-        data = data[columns_order]
+        data = data[first_columns+last_columns]
+        data = data.dropna(axis="columns", how='all')
 
         return data

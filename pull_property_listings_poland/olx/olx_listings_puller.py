@@ -17,11 +17,13 @@ class OlxListingsPuller(PropertyListingsPuller):
         root_url = 'https://www.olx.pl'
         page_param = 'page'
         listing_categories = {'rooms': 'd/nieruchomosci/stancje-pokoje/'}
+        data_columns = ['title', 'price', 'price_num', 'latitude', 'longitude', 'status', 'listing_page_category']
         __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
         listing_details_translations = yaml.safe_load(open(os.path.join(__location__, 'listing_details_translations.yml'), encoding='utf-8'))
         super().__init__(root_url=root_url,
                          page_param=page_param,
                          listing_categories=listing_categories,
+                         data_columns=data_columns,
                          listing_details_translations=listing_details_translations)
 
 
@@ -116,7 +118,7 @@ class OlxListingsPuller(PropertyListingsPuller):
         return listing_details
 
 
-    def process_listing_data(self, data):
+    def process_data(self, data):
         """
         Process the dataset of listings, including removing units from columns and converting to numbers, and ordering the columns.
 

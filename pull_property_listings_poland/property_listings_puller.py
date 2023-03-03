@@ -26,13 +26,18 @@ class PropertyListingsPuller:
     listing_categories : dict (required)
         Dictionary mapping category names to relative URLs for those categories.
 
-    listing_details_translations : dict (required)
-        Dictionary mapping listing detail names to a translation. The order of keys will also be used to order the columns of the final dataset.
+    data_columns : list (required)
+        List of the columns/ information from the listings, e.g. ['Title', 'Price', 'Description'].
+        This is required because the data for each listing page is appended to the CSV file, so this ensures that the columns are the same each time.
+
+    listing_details_translations : dict (default=None)
+        Dictionary mapping listing detail names to a translation. The order of keys will also be used to order the columns of the final dataset. 
     """
-    def __init__(self, root_url, page_param, listing_categories, listing_details_translations=None):
+    def __init__(self, root_url, page_param, listing_categories, data_columns, listing_details_translations=None):
         self.root_url = root_url
         self.page_param = page_param
         self.listing_categories = listing_categories
+        self.data_columns = data_columns
         if listing_details_translations is None:
             listing_details_translations = []
         self.listing_details_translations = listing_details_translations
@@ -71,14 +76,12 @@ class PropertyListingsPuller:
         for category_name, category_url in listing_categories.items():
             self.pull_listings(data_write_path=data_write_path,
                                page_slug=category_url,
-                               extra_listing_info={'listing_page_category': category_name},
                                page_start=page_start,
                                page_end=page_end,
-                               mode='a',
                                suppress_overwrite_warning=True)
 
 
-    def pull_listings(self, data_write_path, page_slug, get_listing_preview=True, get_listing_page=True, extra_listing_info=None, page_start=1, page_end=None, mode='a', suppress_overwrite_warning=False):
+    def pull_listings(self, data_write_path, page_slug, get_listing_preview=True, get_listing_page=True, page_start=1, page_end=None, suppress_overwrite_warning=False):
         """
         Pull a dataset of listings from the property website and save it to a file.
         By default results are appended to the file to enable stopping and starting.
@@ -87,6 +90,7 @@ class PropertyListingsPuller:
         ----------
         data_write_path : string (required)
             The location of the CSV file to write the dataset of listings to.
+            Note that this is required so that the data is saved after every page, because often there are a lot of pages, so if the program crashes before finishing all the pages there is still data saved.
 
         page_slug : string (required)
             A slug to be added to the root url to give the URL of the listings page.
@@ -97,29 +101,15 @@ class PropertyListingsPuller:
         get_listing_page : bool (default=True)
             If True, each single listing page will be requested and information will be extracted.
 
-        extra_listing_info : dict (default=None)
-            Any extra information to add to the listings dataset, e.g. category information.
-
         page_start : int (default=1)
             Number of the page to start, starting from 1.
 
         page_end : int (default=None)
             Number of pages to pull. If None, all pages will be pulled.
 
-        mode : string (default='a')
-            Mode used to write the final dataset. Default is append.
-
         suppress_overwrite_warning : bool (default=False)
             If True, the warning for overwriting files will not be printed. This can be useful for debugging purposes.
         """
-        # Check if the write file exists and print a warning
-        if not suppress_overwrite_warning:
-            if os.path.exists(data_write_path):
-                if mode=='a':
-                    input(f'WARNING: data will append to the existing data file at {data_write_path}. Press enter to continue.')
-                elif mode=='w':
-                    input(f'WARNING: data will overwrite the existing data file at {data_write_path}. Press enter to continue.')
-
         # Loop through listing pages and pull data
         page_number = page_start
         while True:
@@ -186,22 +176,17 @@ class PropertyListingsPuller:
                 # Append the listing data to the main data
                 data.append(listing_data)
 
-            # Process the data
-            data = pd.DataFrame(data)
-            data_columns = ["Title", "Price", "Deposit", "Date", "Update date", "Location 1", "Location 2", "Location 3", "Listing type", "Listing category", "Property type", "Area m2", "Total m2", "Rooms + halls", "Building age", "Floor type", "Page", "URL"]
-            for column in data_columns:
-                if column not in data.columns:
-                    data[column] = ""
-            data = self.process_listing_data(data=data)
-            if extra_listing_info is not None:
-                for name, value in extra_listing_info.items():
-                    data[name] = value
-
-            # Save the dataset
+            # Save the dataset: write with header if it is the first time, else append
             print('Saving data...')
-            header = (not os.path.exists(data_write_path)) if mode=='a' else True
+            if page_number==page_start:
+                header = True; mode = 'w'
+            else:
+                header = False; mode = 'a'
+            data = pd.DataFrame(data)
+            data = data.reindex(columns=self.data_columns+["Page", "URL"])
             data.to_csv(data_write_path, index=False, header=header, mode=mode)
 
+            # Increment the pages or end if on the end page
             if page_end is not None:
                 if page_number >= page_end:
                     break
