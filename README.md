@@ -12,6 +12,7 @@ Currently the sites included for pulling data from are:
 - Türkiye:
     - Hepsiemlak: https://hepsiemlak.com/ 
     - Emlakjet: https://www.emlakjet.com/
+    - Zingat: https://www.zingat.com/
 
 
 ## Setup and installation
