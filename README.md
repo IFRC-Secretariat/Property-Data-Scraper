@@ -1,7 +1,7 @@
-# Property web scraper
+# Property Data Scraper
 
 ## Introduction
-This project is for pulling data from property sites, to show information on the price and availability of residential properties.
+This project is for web scraping data from property sites, to show information on the price and availability of properties.
 
 Currently the sites included for pulling data from are:
 
