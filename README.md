@@ -1,4 +1,4 @@
-# Web scrape data from Polish property sites
+# Web scrape data from property listing sites
 
 ## Introduction
 This project is for pulling data from Polish property sites, to show information on the price and availability of residential properties in Poland. It was developed during the response to the Ukraine crisis to fill a gap in information on properties in Poland.
@@ -8,6 +8,7 @@ Currently the sites included for pulling data from are:
 - Domiporta: https://www.domiporta.pl/
 - Otodom: https://www.otodom.pl/
 - Olx: https://olx.pl/
+- Hepsiemlak: https://hepsiemlak.com/ 
 
 
 ## Setup and installation
