@@ -9,7 +9,7 @@ Categories of properties supported are:
 import os
 import yaml
 import pandas as pd
-from property_data_puller.property_listings_puller import PropertyListingsPuller
+from property_data_scraper.property_listings_puller import PropertyListingsPuller
 
 
 class HepsiemlakListingsPuller(PropertyListingsPuller):

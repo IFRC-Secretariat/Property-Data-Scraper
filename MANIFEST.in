@@ -1,3 +1,5 @@
-include property_data_puller/domiporta/listing_details_translations.yml
-include property_data_puller/olx/listing_details_translations.yml
-include property_data_puller/otodom/listing_details_translations.yml
+include property_data_scraper/domiporta/listing_details_translations.yml
+include property_data_scraper/olx/listing_details_translations.yml
+include property_data_scraper/otodom/listing_details_translations.yml
+include property_data_scraper/hepsiemlak/listing_details_translations.yml
+include property_data_scraper/zingat/listing_details_translations.yml

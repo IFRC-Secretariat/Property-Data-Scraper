@@ -26,11 +26,11 @@ pip3 install .
 The following is an example of how to pull Domiporta, Olx, and Otodom data for specified listing categories.
 
 ```python
-import property_data_puller
+import property_data_scraper
 
 # Pull Hepsiemlak data and save
 raw_data_path = 'hepsiemlak_property_data.csv'
-listings_puller = property_data_puller.HepsiemlakListingsPuller()
+listings_puller = property_data_scraper.HepsiemlakListingsPuller()
 listings_puller.pull_listings(data_write_path=raw_data_path, 
                               listing_page_slug='kiralik', 
                               get_listing_previews=True,

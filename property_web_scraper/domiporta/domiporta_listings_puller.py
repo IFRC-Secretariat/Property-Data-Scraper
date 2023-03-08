@@ -8,7 +8,7 @@ Categories of properties supported are:
 """
 import os
 import yaml
-from property_data_puller.property_listings_puller import PropertyListingsPuller
+from property_data_scraper.property_listings_puller import PropertyListingsPuller
 
 
 class DomiportaListingsPuller(PropertyListingsPuller):

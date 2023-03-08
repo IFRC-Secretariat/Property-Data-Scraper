@@ -6,7 +6,7 @@ import locale
 import yaml
 from datetime import date
 import pandas as pd
-from property_data_puller.property_listings_puller import PropertyListingsPuller
+from property_data_scraper.property_listings_puller import PropertyListingsPuller
 
 
 class EmlakjetListingsPuller(PropertyListingsPuller):
