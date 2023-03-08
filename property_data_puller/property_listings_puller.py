@@ -20,19 +20,23 @@ class PropertyListingsPuller:
     root_url : string (required)
         The root url of the website.
 
-    page_param : string (required)
-        The name of the parameter that is in the URL to specify the page number.
-
     data_columns : list (required)
         List of the columns/ information from the listings, e.g. ['Title', 'Price', 'Description'].
         This is required because the data for each listing page is appended to the CSV file, so this ensures that the columns are the same each time.
 
+    page_param : string (default=None)
+        The name of the parameter that is in the URL to specify the page number.
+
+    page_in_url : bool (default=False)
+        If the page number is in the URL as a slug, leave the page param as None and set this to True.
+
     listing_details_translations : dict (default=None)
         Dictionary mapping listing detail names to a translation. The order of keys will also be used to order the columns of the final dataset. 
     """
-    def __init__(self, root_url, page_param, data_columns, listing_details_translations=None):
+    def __init__(self, root_url, data_columns, page_param=None, page_in_url=False, listing_details_translations=None):
         self.root_url = root_url
         self.page_param = page_param
+        self.page_in_url = page_in_url
         self.data_columns = data_columns
         if listing_details_translations is None:
             listing_details_translations = []
@@ -65,14 +69,18 @@ class PropertyListingsPuller:
         page_end : int (default=None)
             Number of pages to pull. If None, all pages will be pulled.
         """
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
+
         # Loop through listing pages and pull data
         page_number = page_start
         while True:
             data = []
-            listings_page_url = f'{self.root_url}/{listing_page_slug}?{self.page_param}={page_number}'
-            print(f'\nSearching listings in page {page_number}... {listings_page_url}')
+            if self.page_in_url:
+                listings_page_url = f'{self.root_url}/{listing_page_slug}/{page_number}/'
+            else:
+                listings_page_url = f'{self.root_url}/{listing_page_slug}?{self.page_param}={page_number}'
             try:
-                listings_page = requests.get(listings_page_url)
+                listings_page = requests.get(listings_page_url, headers={'User-agent': user_agent})
             except requests.exceptions.ChunkedEncodingError as err:
                 break
             listings_soup = BeautifulSoup(listings_page.content, "html.parser")
@@ -89,6 +97,7 @@ class PropertyListingsPuller:
                     break
 
             # Loop through all listings on the page
+            print(f'\nSearching listings in page {page_number}... {listings_page_url}')
             for i, single_listing in enumerate(listings):
                 listing_data = {}
 
@@ -115,7 +124,7 @@ class PropertyListingsPuller:
                     max_attempts = 20
                     for attempt in range(1, max_attempts+1):
                         try:
-                            single_page = requests.get(f'{single_listing_url}')
+                            single_page = requests.get(f'{single_listing_url}', headers={'User-agent': user_agent})
                             single_soup = BeautifulSoup(single_page.content, "html.parser")
                             single_listing_info = self.get_listing_details(listing_page_soup=single_soup)
                             break
@@ -167,12 +176,24 @@ class PropertyListingsPuller:
 
     def get_listing_preview_data(self, listing_preview_soup):
         """
-        Get the list of listings from the listings page. This method should be defined in the child class so raise a NotImplementedError.
+        Get the details of the listing from the listing preview on the listings page.
 
         Parameters
         ----------
         listing_preview_soup : BeautifulSoup (required)
             Soup of the listing preview (element of the listings list).
+        """
+        raise NotImplementedError
+
+
+    def get_listing_details(self, listing_page_soup):
+        """
+        Get details of the property listing from the listing page soup.
+
+        Parameters
+        ----------
+        listing_page_soup : BeautifulSoup (required)
+            Soup of the listing page.
         """
         raise NotImplementedError
 

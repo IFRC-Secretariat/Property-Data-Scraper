@@ -5,10 +5,13 @@ This project is for pulling data from Polish property sites, to show information
 
 Currently the sites included for pulling data from are:
 
-- Domiporta: https://www.domiporta.pl/
-- Otodom: https://www.otodom.pl/
-- Olx: https://olx.pl/
-- Hepsiemlak: https://hepsiemlak.com/ 
+- Poland:
+    - Domiporta: https://www.domiporta.pl/
+    - Otodom: https://www.otodom.pl/
+    - Olx: https://olx.pl/
+- Türkiye:
+    - Hepsiemlak: https://hepsiemlak.com/ 
+    - Emlakjet: https://www.emlakjet.com/
 
 
 ## Setup and installation
