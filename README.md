@@ -25,19 +25,19 @@ pip3 install .
 ## Examples
 The following examples show how to pull data from the different listing sites. There is a class for each listing site. For each one, the ```pull_listings``` method can be used to pull the listings. This has the same parameters for each class:
 
-- data_write_path : string (required). Location and filename (CSV) to save the data to. This is required becuase the data is saved for each page of listings, so that there is data saved even if the program stops running before finishing.
+- ```data_write_path``` : string (required). Location and filename (CSV) to save the data to. This is required becuase the data is saved for each page of listings, so that there is data saved even if the program stops running before finishing.
 
-- listing_page_slug : string (required). The string to add to the root URL to get the listings page URL.
+- ```listing_page_slug``` : string (required). The string to add to the root URL to get the listings page URL.
 
-- get_listing_previous: boolean (default=True). If True, information will be extracted from the listing preview information on the listings page.
+- ```get_listing_previous```: boolean (default=True). If True, information will be extracted from the listing preview information on the listings page.
 
-- get_listing_pages : boolean (default=True). If True, each single listing page will be requested and information will be extracted from it.
+- ```get_listing_pages``` : boolean (default=True). If True, each single listing page will be requested and information will be extracted from it.
 
-- page_start : int (default=1). The page number to start at.
+- ```page_start``` : int (default=1). The page number to start at.
 
-- page_end : int or None (default=None). Number of pages to pull. If None, all pages will be pulled.
+- ```page_end``` : int or None (default=None). Number of pages to pull. If None, all pages will be pulled.
 
-### Poland dataz
+### Poland data
 
 ```python
 import property_data_scraper
