@@ -16,7 +16,7 @@ Currently the sites included for pulling data from are:
 
 
 ## Setup and installation
-To install the project, run the following in a bash terminal from the top-level of the project:
+To install the project, first clone the Github repository, as described [here](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository). Next, install the project by running the following in a bash terminal from the top-level of the project:
 
 ```bash
 pip3 install .
@@ -36,6 +36,8 @@ The following examples show how to pull data from the different listing sites. T
 - ```page_start``` : int (default=1). The page number to start at.
 
 - ```page_end``` : int or None (default=None). Number of pages to pull. If None, all pages will be pulled.
+
+The ```pull_listings``` method will pull the listing data, and runs minimal data cleaning in order to be as fast as possible and avoid errors. The ```process_data``` method can be run on the saved raw data to process the data, including converting columns to number format, converting date formats, and tidying and cleaning the data.
 
 ### Poland data
 
@@ -152,6 +154,16 @@ processed_listings = listings_puller.process_data(raw_listings)
 processed_listings.to_csv('zingat_property_data_processed.csv', index=False)
 
 ```
+
+## Contributing
+
+The project is set up so that new listing sites can be added as easily as possible. To add a new listing site, create a new folder under ```property_data_scraper```, add the module file with the new class, and update the ```__init__.py``` files to import the new class. We suggest using an existing class as a template: set the variables (```root_url```, ```page_param```, ```data_columns```), and define the following methods:
+
+- ```get_listings_list```: Get a list of the listings from the listings page soup.
+- ```get_listing_url```: Get the URL of the single listing page from an individual listing in the listings list.
+- ```get_listing_preview_data```: Extract information from the soup of the listing preview (the information about a single listing on the listings page). Return the information as a dict.
+- ```get_listing_details```: Extract information from the individual listing page. Return the information as a dict.
+- ```process_data```: Process the raw data, e.g. convert prices to numbers, convert date formats, convert areas to numbers, convert rooms to numbers, and format and tidy columns.
 
 ## Contact
 
